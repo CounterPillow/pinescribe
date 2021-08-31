@@ -6,12 +6,13 @@ PRODUCT_IDS = [
     0x350a,
 ]
 
+
 class RKUSBDevice:
     __slots__ = ['product_id', 'vendor_id', 'dev_type',
                  'bus', 'dev_addr']
 
     def bcd_to_dev_type(bcd) -> str:
-        t = bcd & 0x1;
+        t = bcd & 0x1
         return 'maskrom' if t == 0 else 'loader'
 
     def __init__(self, device: usb1.USBDevice):
