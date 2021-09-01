@@ -82,4 +82,4 @@ def download_loader(handle: usb1.USBDeviceHandle, entry: bootfile.RKLDREntry):
         if len(packet) < 4096:
             packet += bytes(4096 - len(packet))
         handle.controlWrite(0x40, 0xC, 0, request_type, packet)
-    sleep(entry.pld_delay)
+    sleep(entry.pld_delay / 1000)
