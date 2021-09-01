@@ -1,2 +1,2 @@
-from . import scanusb
+from . import usb
 from . import bootfile
