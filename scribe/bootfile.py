@@ -1,6 +1,6 @@
+from binascii import crc_hqx
 from collections import namedtuple
 from struct import unpack
-from zlib import crc32
 
 
 class BootfileException(Exception):
@@ -27,7 +27,7 @@ class RKLDREntry:
     def read_payload(self, f):
         f.seek(self.pld_offset)
         self.pld = f.read(self.pld_size)
-        self.crc = crc32(self.pld)
+        self.crc = crc_hqx(self.pld, 0xffff)
 
     def has_pld(self):
         return self.pld is not None

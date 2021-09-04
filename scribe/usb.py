@@ -75,11 +75,12 @@ def download_loader(handle: usb1.USBDeviceHandle, entry: bootfile.RKLDREntry):
 
     if not entry.has_pld():
         raise DownloadException("Entry does not have its payload read")
-    click.echo(f"Writing payload of type 0x{request_type:x}")
-
-    data = entry.pld + bytes(((entry.crc & 0xff00) >> 8, entry.crc & 0x00ff))
+    crc = int.to_bytes(entry.crc, 4, 'big')[-2:]
+    data = entry.pld + crc
     for packet in as_chunks(data, 4096):
-        if len(packet) < 4096:
-            packet += bytes(4096 - len(packet))
-        handle.controlWrite(0x40, 0xC, 0, request_type, packet)
+        sent = handle.controlWrite(0x40, 0xC, 0, request_type, packet)
+        if sent != len(packet):
+            raise DownloadException(f"Wanted to send {len(packet)} bytes, only sent {sent}!")
+
     sleep(entry.pld_delay / 1000)
+    sleep(1)
