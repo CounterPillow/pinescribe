@@ -1,2 +1,1 @@
-from . import usb
-from . import bootfile
+from . import bootfile, cbw, usb

@@ -1,7 +1,7 @@
 import click
 from time import sleep
 import usb1
-from . import bootfile
+from . import bootfile, cbw
 
 
 ROCKCHIP_VENDOR_ID = 0x2207
@@ -53,11 +53,14 @@ def scan_devices():
     return devices
 
 
-def get_device(uc: usb1.USBContext) -> usb1.USBDeviceHandle:
+def get_device(uc: usb1.USBContext, maskrom_only=True) -> usb1.USBDeviceHandle:
     for i in PRODUCT_IDS:
         dev = uc.getByVendorIDAndProductID(ROCKCHIP_VENDOR_ID, i)
         if dev:
-            if RKUSBDevice.bcd_to_dev_type(dev.getbcdUSB()) == 'maskrom':
+            if maskrom_only:
+                if RKUSBDevice.bcd_to_dev_type(dev.getbcdUSB()) == 'maskrom':
+                    break
+            else:
                 break
     else:
         raise DeviceException("no connected devices")
@@ -84,3 +87,32 @@ def download_loader(handle: usb1.USBDeviceHandle, entry: bootfile.RKLDREntry):
 
     sleep(entry.pld_delay / 1000)
     sleep(1)
+
+
+# FIXME: doesn't check CSW signature/tag match right now
+def get_flash_info(handle: usb1.USBDeviceHandle):
+    c = cbw.RKCBW(11, cbw.USB_OPERATION_CODE_VALUES['READ_FLASH_INFO'])
+
+    chosen_ep_out = 0
+    chosen_ep_in = 0
+    iface_num_out = 0
+    iface_num_in = 0
+    for iface in handle.getDevice().iterSettings():
+        for ep in iface:
+            addr = ep.getAddress()
+            if addr & 0x80 == 0:
+                if not chosen_ep_out:
+                    chosen_ep_out = addr
+                    iface_num_out = iface.getNumber()
+            if addr == 0:
+                if not chosen_ep_in:
+                    chosen_ep_in = addr
+                    iface_num_in = iface.getNumber()
+
+    with handle.claimInterface(iface_num_out):
+        handle.bulkWrite(chosen_ep_out, c.to_bytes())
+    with handle.claimInterface(iface_num_in):
+        resp = handle.bulkRead(chosen_ep_in, 512, 5000)
+    if len(resp) == 0:
+        raise DeviceException("bulk read didn't return any data")
+    return resp

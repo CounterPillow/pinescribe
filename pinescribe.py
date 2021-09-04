@@ -48,5 +48,14 @@ def download_boot(loader):
     handle.close()
 
 
+@main.command()
+def read_flash_info():
+    with usb1.USBContext() as uc:
+        handle = usb.get_device(uc, maskrom_only=False)
+        click.echo("Reading flash info")
+        print(usb.get_flash_info(handle))
+        handle.close()
+
+
 if __name__ == '__main__':
     main()
