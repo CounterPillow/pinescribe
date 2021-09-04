@@ -44,7 +44,8 @@ def download_boot(loader):
             except usb1.USBErrorNoDevice as e:
                 click.echo("Unfortunately, we got disconnected during a download", err=True)
                 return -3
-            click.echo("Download finished")
+    click.echo("Download finished")
+    handle.close()
 
 
 if __name__ == '__main__':
